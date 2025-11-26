@@ -53,7 +53,10 @@
     
     <!-- Tailwind Config -->
     <script>
-        tailwind.config = {
+        // Garante que o objeto window.tailwind exista para evitar ReferenceError
+        window.tailwind = window.tailwind || {};
+        
+        window.tailwind.config = {
             theme: {
                 extend: {
                     colors: {
@@ -318,11 +321,12 @@
         <section id="sobre" class="page-content">
             <div class="max-w-4xl mx-auto">
                 <div class="text-center mb-12">
-                    <h1 class="text-4xl font-serif font-bold text-terra-escura mb-4">Nossa Missão</h1>
+                    <h1 class="text-4xl font-serif font-bold text-terra-escura mb-4">Quem Somos</h1>
                     <div class="h-1 w-20 bg-axe-principal mx-auto"></div>
                 </div>
 
-                <div class="bg-white p-8 md:p-12 rounded-3xl shadow-lg space-y-8 text-lg text-gray-700 leading-relaxed">
+                <div class="bg-white p-8 md:p-12 rounded-3xl shadow-lg space-y-8 text-lg text-gray-700 leading-relaxed mb-12">
+                    <h2 class="text-2xl font-serif font-bold text-terra-escura border-b pb-2">Nossa Missão</h2>
                     <p>
                         A <strong class="text-terra-escura">Guias de Axé V&H</strong> nasceu de um desejo profundo: oferecer ferramentas espirituais que respeitem a liturgia, a estética e a energia sagrada das religiões de matriz africana.
                     </p>
@@ -348,6 +352,80 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Nova Seção: Conheça os Guias -->
+                <div class="bg-white p-8 md:p-12 rounded-3xl shadow-lg">
+                    <h2 class="text-3xl font-serif font-bold text-terra-escura mb-8 text-center">Conheça Nossas Energias</h2>
+                    
+                    <div class="space-y-10">
+                        <!-- Orixás -->
+                        <div>
+                            <h3 class="text-2xl font-bold text-axe-principal mb-4 flex items-center gap-2">
+                                <i data-lucide="sun" class="w-6 h-6"></i> Orixás
+                            </h3>
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div class="bg-terra-clara p-4 rounded-xl">
+                                    <strong class="text-terra-escura block text-lg">Oxalá</strong>
+                                    <p class="text-sm text-gray-600">O pai de todos os orixás, associado à paz, sabedoria e criação do mundo.</p>
+                                </div>
+                                <div class="bg-terra-clara p-4 rounded-xl">
+                                    <strong class="text-terra-escura block text-lg">Iemanjá</strong>
+                                    <p class="text-sm text-gray-600">A rainha do mar, simbolizando fertilidade, amor materno e proteção.</p>
+                                </div>
+                                <div class="bg-terra-clara p-4 rounded-xl">
+                                    <strong class="text-terra-escura block text-lg">Ogum</strong>
+                                    <p class="text-sm text-gray-600">O guerreiro, orixá que proporciona forças aos homens. Associado à guerra, trabalho, progresso e proteção.</p>
+                                </div>
+                                <div class="bg-terra-clara p-4 rounded-xl">
+                                    <strong class="text-terra-escura block text-lg">Xangô</strong>
+                                    <p class="text-sm text-gray-600">Orixá da justiça e do trovão. Ensinou o homem a fazer o fogo. Simboliza o poder e a força moral.</p>
+                                </div>
+                                <div class="bg-terra-clara p-4 rounded-xl">
+                                    <strong class="text-terra-escura block text-lg">Oxóssi</strong>
+                                    <p class="text-sm text-gray-600">O caçador, associado às matas, ao conhecimento, à fartura e ao sustento.</p>
+                                </div>
+                                <div class="bg-terra-clara p-4 rounded-xl">
+                                    <strong class="text-terra-escura block text-lg">Oxum</strong>
+                                    <p class="text-sm text-gray-600">A rainha das águas doces, simbolizando o amor, a beleza, a fertilidade e a prosperidade.</p>
+                                </div>
+                                <div class="bg-terra-clara p-4 rounded-xl">
+                                    <strong class="text-terra-escura block text-lg">Iansã</strong>
+                                    <p class="text-sm text-gray-600">A orixá vibrante, guerreira, associada aos ventos, tempestades e à luta pela justiça.</p>
+                                </div>
+                                <div class="bg-terra-clara p-4 rounded-xl">
+                                    <strong class="text-terra-escura block text-lg">Oxumaré</strong>
+                                    <p class="text-sm text-gray-600">O orixá do arco-íris e da renovação. Associado aos ciclos, à transformação e à riqueza.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Entidades -->
+                        <div>
+                            <h3 class="text-2xl font-bold text-axe-secundario mb-4 flex items-center gap-2">
+                                <i data-lucide="users" class="w-6 h-6"></i> Entidades
+                            </h3>
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div class="bg-stone-50 border-l-4 border-axe-secundario p-4 rounded-r-xl">
+                                    <strong class="text-terra-escura block text-lg">Caboclos</strong>
+                                    <p class="text-sm text-gray-600">Espíritos de ancestrais indígenas, conhecidos por sua forte ligação com a natureza, a sabedoria das matas e a cura.</p>
+                                </div>
+                                <div class="bg-stone-50 border-l-4 border-axe-secundario p-4 rounded-r-xl">
+                                    <strong class="text-terra-escura block text-lg">Pombagiras</strong>
+                                    <p class="text-sm text-gray-600">Entidades femininas de força e poder, que lutaram contra a opressão. Ajudam nos caminhos do amor e nas dificuldades da vida.</p>
+                                </div>
+                                <div class="bg-stone-50 border-l-4 border-axe-secundario p-4 rounded-r-xl">
+                                    <strong class="text-terra-escura block text-lg">Exus</strong>
+                                    <p class="text-sm text-gray-600">Guardiões e mensageiros. Simbolizam a comunicação, a vitalidade e a proteção, banindo energias estagnadas e abrindo caminhos.</p>
+                                </div>
+                                <div class="bg-stone-50 border-l-4 border-axe-secundario p-4 rounded-r-xl">
+                                    <strong class="text-terra-escura block text-lg">Zé Pelintra</strong>
+                                    <p class="text-sm text-gray-600">Figura central da malandragem sagrada e proteção dos humildes. Símbolo da sabedoria das ruas e da resistência popular.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </section>
 
@@ -786,4 +864,3 @@
     </script>
 </body>
 </html>
-
