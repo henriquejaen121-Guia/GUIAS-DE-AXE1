@@ -16,32 +16,39 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Georgia:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
-    <!-- Firebase Configuration -->
+    <!-- Configuração Híbrida (Firebase + Local Storage) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, onSnapshot, collection, setDoc, updateDoc, deleteDoc, runTransaction, query, where, getDocs, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Inicialização do Firebase
-        const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {}; 
-        const app = initializeApp(firebaseConfig);
+        // Verifica se existe configuração injetada (Ambiente de Dev) ou se está no GitHub (Produção sem backend)
+        const hasFirebaseConfig = typeof window.__firebase_config !== 'undefined' && window.__firebase_config;
         
-        // Exportando para o escopo global (window) para uso nos scripts inline
-        window.db = getFirestore(app);
-        window.auth = getAuth(app);
-        window.signInAnonymously = signInAnonymously;
-        window.signInWithCustomToken = signInWithCustomToken;
-        window.onAuthStateChanged = onAuthStateChanged;
-        window.doc = doc;
-        window.setDoc = setDoc;
-        window.onSnapshot = onSnapshot;
+        if (hasFirebaseConfig) {
+            console.log("Ambiente com Backend Detectado. Iniciando Firebase...");
+            const firebaseConfig = JSON.parse(window.__firebase_config);
+            const app = initializeApp(firebaseConfig);
+            
+            window.db = getFirestore(app);
+            window.auth = getAuth(app);
+            window.signInAnonymously = signInAnonymously;
+            window.signInWithCustomToken = signInWithCustomToken;
+            window.onAuthStateChanged = onAuthStateChanged;
+            window.doc = doc;
+            window.setDoc = setDoc;
+            window.onSnapshot = onSnapshot;
+            window.isLocalMode = false;
+        } else {
+            console.warn("Configuração de Backend não detectada. Ativando MODO LOCAL (GitHub/Offline).");
+            // Mock das funções do Firebase para não quebrar o código, mas usamos isLocalMode para a lógica real
+            window.isLocalMode = true;
+            window.auth = { currentUser: null }; // Mock simples
+        }
 
-        // Sinaliza que o Firebase carregou
-        window.firebaseInitialized = true;
-        window.dispatchEvent(new Event('firebase-ready'));
-
-        // Debug (Opcional)
-        // setLogLevel('debug');
+        // Sinaliza que o script de infraestrutura carregou
+        window.infraInitialized = true;
+        window.dispatchEvent(new Event('infra-ready'));
     </script>
     
     <!-- Tailwind Config -->
@@ -351,7 +358,7 @@
     ========================================== -->
     <footer id="contato" class="bg-terra-escura text-stone-300 py-12 mt-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
                 
                 <div class="col-span-1 md:col-span-1">
                     <h3 class="text-2xl font-serif font-bold text-white mb-4">V&H</h3>
@@ -380,12 +387,6 @@
                     </ul>
                 </div>
 
-                <div>
-                    <h4 class="text-white font-bold mb-4 uppercase text-xs tracking-wider">Debug Info</h4>
-                    <div class="bg-black/20 p-3 rounded text-xs font-mono break-all">
-                        ID: <span id="current-user-id" class="text-axe-principal">Iniciando...</span>
-                    </div>
-                </div>
             </div>
             
             <div class="border-t border-white/10 pt-8 text-center text-xs">
@@ -542,14 +543,15 @@
             lucide.createIcons();
         }
 
-        // --- CARRINHO & FIREBASE ---
+        // --- CARRINHO & FIREBASE/LOCAL ---
         
         // Adiciona usando apenas ID para segurança
         function addToCartById(id) {
-            if (!state.user) {
+            if (!state.user && !window.isLocalMode) {
                 showMessage('Login Necessário', 'Aguarde a conexão com o servidor...', 'error');
                 return;
             }
+            
             const product = getProductById(id);
             const existing = state.cart.find(item => item.id === id);
             
@@ -562,22 +564,25 @@
             
             saveCart(newCart);
             showMessage('Adicionado!', `${product.name} está no carrinho.`, 'success');
-            
-            // Feedback visual no botão mobile ou abrir carrinho
-            const cartSidebar = document.getElementById('cart-sidebar');
-            if (cartSidebar.classList.contains('translate-x-full')) {
-               // Carrinho fechado, não faz nada intrusivo, só a mensagem
-            }
         }
 
         async function saveCart(newCart) {
+            // MODO LOCAL: Salva no LocalStorage
+            if (window.isLocalMode) {
+                state.cart = newCart;
+                localStorage.setItem('vh_cart', JSON.stringify(newCart));
+                renderCart();
+                return;
+            }
+
+            // MODO FIREBASE
+            if (!state.user) return;
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app';
-            // CORREÇÃO: Template Literal com crases
             const docRef = window.doc(window.db, `artifacts/${appId}/users/${state.user.uid}/cart/current`);
             
             try {
                 await window.setDoc(docRef, { items: newCart, updatedAt: new Date() });
-                // A UI atualiza via onSnapshot, não aqui manualmente
+                // No Firebase a UI atualiza via onSnapshot automaticamente
             } catch (error) {
                 console.error("Erro ao salvar:", error);
                 showMessage('Erro', 'Falha ao salvar carrinho.', 'error');
@@ -607,7 +612,6 @@
             let count = 0;
 
             if (state.cart.length === 0) {
-                // FIXED: Use innerHTML string template instead of appendChild on null element
                 container.innerHTML = `
                     <div id="empty-cart-message" class="flex flex-col items-center justify-center h-full text-gray-400">
                         <i data-lucide="shopping-basket" class="w-16 h-16 mb-4 opacity-50"></i>
@@ -661,7 +665,6 @@
                 setTimeout(() => overlay.classList.add('hidden'), 300);
             } else {
                 overlay.classList.remove('hidden');
-                // Pequeno delay para permitir a transição CSS da opacidade
                 setTimeout(() => overlay.classList.remove('opacity-0'), 10);
                 sidebar.classList.remove('translate-x-full');
             }
@@ -671,10 +674,12 @@
         function checkoutViaWhatsApp() {
             if (state.cart.length === 0) return;
 
-            let msg = `Olá! Gostaria de fazer um pedido (ID Usuário: ${state.user.uid.slice(0,5)}...):\n\n`;
+            // Define ID para checkout
+            const userIdDisplay = state.user && state.user.uid ? state.user.uid.slice(0,5) : 'Visitante';
+            
+            let msg = `Olá! Gostaria de fazer um pedido (ID: ${userIdDisplay}):\n\n`;
             let total = 0;
 
-            // CORREÇÃO: Template Literals
             state.cart.forEach(item => {
                 const sub = item.price * item.quantity;
                 total += sub;
@@ -710,19 +715,32 @@
         function toggleMobileMenu() {
             const menu = document.getElementById('mobile-menu');
             menu.classList.toggle('hidden');
-            const icon = document.getElementById('mobile-menu-icon');
-            // Toggle simples de ícone se desejar, mas o Lucide precisa recriar
         }
 
         // --- INICIALIZAÇÃO ---
         async function init() {
-            // Guardrail: Ensure Firebase exports are actually available on window
-            if (!window.auth || !window.signInWithCustomToken) {
-                console.log("Aguardando carregamento do Firebase...");
+            
+            // LÓGICA MODO LOCAL (Sem Firebase)
+            if (window.isLocalMode) {
+                // Removido referência a 'current-user-id'
+                // document.getElementById('current-user-id').innerText = "Visitante (Local)";
+                
+                // Carrega carrinho do localStorage
+                const savedCart = localStorage.getItem('vh_cart');
+                if (savedCart) {
+                    try {
+                        state.cart = JSON.parse(savedCart);
+                        renderCart();
+                    } catch(e) { console.error("Erro ao ler carrinho local", e); }
+                }
+                
+                document.getElementById('year').innerText = new Date().getFullYear();
+                renderCatalog();
+                showPage('home');
                 return;
             }
 
-            // 1. Auth e Firestore Listener
+            // LÓGICA MODO FIREBASE (Com Backend)
             const auth = window.auth;
             
             if (typeof __initial_auth_token !== 'undefined') {
@@ -734,10 +752,10 @@
             window.onAuthStateChanged(auth, (user) => {
                 if (user) {
                     state.user = user;
-                    document.getElementById('current-user-id').innerText = user.uid;
+                    // Removido referência a 'current-user-id'
+                    // document.getElementById('current-user-id').innerText = user.uid;
                     
                     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app';
-                    // CORREÇÃO: Template Literal com crases
                     const cartRef = window.doc(window.db, `artifacts/${appId}/users/${user.uid}/cart/current`);
                     
                     window.onSnapshot(cartRef, (doc) => {
@@ -751,17 +769,16 @@
                 }
             });
 
-            // 2. Render inicial
             document.getElementById('year').innerText = new Date().getFullYear();
             renderCatalog();
             showPage('home');
         }
 
-        // Start Logic with Event Listener
-        if (window.firebaseInitialized) {
+        // Start Logic with Event Listener or Direct Call
+        if (window.infraInitialized) {
             init();
         } else {
-            window.addEventListener('firebase-ready', () => {
+            window.addEventListener('infra-ready', () => {
                 init();
             });
         }
